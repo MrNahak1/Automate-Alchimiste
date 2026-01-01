@@ -29,20 +29,37 @@ class AlchimisteWorld(World):
     }
 
     def create_items(self):
-        # Starting Item
+        # 1. Objet de départ (déjà collecté, ne va pas dans le pool)
         self.multiworld.push_precollected(AlchimisteItem("Puce de Mouvement", ItemClassification.progression, 60001, self.player))
 
-        # Objets de progression
-        prog = ["Masque a Gaz", "Puce de Gauche", "Puce de Recul", "Clef Etage 1", "Clef Etage 2", "Clef Etage 3", "Clef Etage 4", "Clef Etage 5"]
-        for name in prog:
-            self.multiworld.itempool.append(AlchimisteItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player))
+        # 2. Créer la liste des objets importants à cacher (10 objets ici)
+        pool = []
         
+        # Objets de progression
+        prog_items = ["Masque a Gaz", "Puce de Gauche", "Puce de Recul", 
+                      "Clef Etage 1", "Clef Etage 2", "Clef Etage 3", "Clef Etage 4", "Clef Etage 5"]
+        for name in prog_items:
+            pool.append(AlchimisteItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player))
+        
+        # Objets utiles
         for name in ["Epee", "Boussole"]:
-            self.multiworld.itempool.append(AlchimisteItem(name, ItemClassification.useful, self.item_name_to_id[name], self.player))
+            pool.append(AlchimisteItem(name, ItemClassification.useful, self.item_name_to_id[name], self.player))
 
-        # Remplissage automatique (Pool total de 41)
-        while len(self.multiworld.itempool) < len(self.location_name_to_id):
-            self.multiworld.itempool.append(AlchimisteItem("Potion", ItemClassification.filler, 60004, self.player))
+        # 3. CALCUL DU REMPLISSAGE (Le "Fix" pour le Multiworld)
+        # On a 41 locations au total. 
+        # La Puce de Mouvement est pre-collected, elle ne compte pas dans les coffres.
+        # Il faut donc que Jerome apporte 41 objets pour remplir ses 41 coffres/niveaux.
+        
+        nombre_total_locations = len(self.location_name_to_id) # C'est 41
+        nombre_objets_actuels = len(pool) # C'est 10
+        
+        potions_a_ajouter = nombre_total_locations - nombre_objets_actuels
+        
+        for _ in range(potions_a_ajouter):
+            pool.append(AlchimisteItem("Potion", ItemClassification.filler, 60004, self.player))
+
+        # 4. On ajoute TOUT ton pool personnel au pool du Multiworld
+        self.multiworld.itempool += pool
 
     def create_regions(self):
         menu = Region("Menu", self.player, self.multiworld)
